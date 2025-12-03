@@ -45,7 +45,28 @@ button {
   cursor: pointer; 
 }
 
-    button:hover { background:#333; }
+button:hover { background:#333; }
+
+    /* Bloque de explicaciones */
+    #info {
+      margin-top:30px;
+      padding:20px;
+      background:#111;
+      border-radius:10px;
+      width:90%;
+      max-width:900px;
+      line-height:1.5;
+    }
+
+    #info h2 { color:#66aaff; }
+    #info h3 { color:#ffaa66; }
+
+    code {
+      background:#222;
+      padding:3px 6px;
+      border-radius:5px;
+      color:#aaffaa;
+    }
   </style>
 </head>
 <body>
@@ -111,24 +132,20 @@ button {
       state.t=0;
     }
 
-    /* === CAMPO DE VELOCIDADES ESTABILIZADO === */
     function velocityField(r, masa, omega, sigma, t){
       const vt=[], vr=[], vz=[];
       for(let i=0;i<r.length;i++){
 
-        // Velocidad tangencial estabilizada
         vt.push(
           (omega*Math.sqrt(masa)/(1+r[i]/4)) +
           INIT.k*r[i] * 0.8
         );
 
-        // Velocidad radial con freno
         vr.push(
           (-0.08*r[i]/(1+r[i]/4)) +
           randn()*sigma*0.03
         );
 
-        // Restauración al plano Z
         vz.push(
           randn()*sigma*0.15 -
           0.015 * state.z[i]
@@ -154,7 +171,6 @@ button {
       const {vt,vr,vz}=velocityField(state.r,masa,omega,sigma,state.t);
       const {x,y,z}=polarToXYZ(state.r,state.theta,state.z);
 
-      // Magnitud de velocidad → color
       const vmag = vt.map((v,i)=>Math.sqrt(vt[i]**2 + vr[i]**2 + vz[i]**2));
 
       Plotly.react("graph",[{
@@ -184,7 +200,6 @@ button {
         state.z[i] += vz[i] * INIT.dt;
 
         if(state.r[i] < 0.01) state.r[i] = 0.01;
-
         if(state.r[i] > INIT.rmax){
           state.r[i] = INIT.rmax - Math.random()*0.5;
         }
@@ -198,7 +213,6 @@ button {
       requestAnimationFrame(animate);
     }
 
-    // CONTROLES
     document.getElementById("play").onclick=()=>{ state.playing=true; animate(); };
     document.getElementById("pause").onclick=()=>{ state.playing=false; };
     document.getElementById("reset").onclick=()=>{ initStars(); updateFigure(); };
@@ -219,6 +233,45 @@ button {
     initStars(); updateFigure();
 
   </script>
+
+  <!-- EXPLICACIÓN Y CÁLCULOS PEDIDOS -->
+  <div id="info">
+    <h2>¿Cómo se calcula cada función?</h2>
+
+    <h3>1. Masa central (M)</h3>
+    <p>
+      La masa central afecta la velocidad con que las estrellas giran.  
+      Se usa en la fórmula de velocidad tangencial:
+    </p>
+    <code>v<sub>t</sub> = ( ω · √M ) / ( 1 + r/4 )</code>
+    <p>
+      Ejemplo: si <code>M = 4</code> y <code>ω = 1</code>:  
+      <br>√4 = 2 → <code>v<sub>t</sub> = 2 / (1 + r/4)</code>
+    </p>
+
+    <h3>2. Velocidad angular (ω)</h3>
+    <p>
+      Controla qué tan rápido gira el sistema.  
+      Es directamente proporcional a la velocidad tangencial:
+    </p>
+    <code>v<sub>t</sub> ∝ ω</code>
+    <p>
+      Ejemplo: si duplicas <code>ω</code>, las estrellas giran el doble de rápido.
+    </p>
+
+    <h3>3. Dispersión radial (σ)</h3>
+    <p>
+      Aumenta el movimiento aleatorio en la simulación.  
+      Se usa en las componentes radial y vertical:
+    </p>
+    <code>v<sub>r</sub> += ruido · σ · 0.03</code><br>
+    <code>v<sub>z</sub> += ruido · σ · 0.15</code>
+    <p>
+      Ejemplo: si <code>σ</code> se vuelve 2× más grande,  
+      los movimientos aleatorios también se vuelven 2× mayores.
+    </p>
+  </div>
+
 </body>
 </html>
 
